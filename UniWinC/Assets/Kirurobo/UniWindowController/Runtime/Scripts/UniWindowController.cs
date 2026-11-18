@@ -1029,8 +1029,17 @@ namespace Kirurobo
             if (_uniWinCore == null) return;
 
             _uniWinCore.EnableTopmost(topmost);
-            _isTopmost = _uniWinCore.IsTopmost;
-            _isBottommost = _uniWinCore.IsBottommost;
+            if (_uniWinCore.IsActive)
+            {
+                _isTopmost = _uniWinCore.IsTopmost;
+                _isBottommost = _uniWinCore.IsBottommost;
+            }
+            else
+            {
+                // Not attached yet: keep the request so UpdateTargetWindow applies it on attach
+                _isTopmost = topmost;
+                if (topmost) _isBottommost = false;
+            }
         }
 
         /// <summary>
@@ -1042,8 +1051,17 @@ namespace Kirurobo
             if (_uniWinCore == null) return;
 
             _uniWinCore.EnableBottommost(bottommost);
-            _isBottommost = _uniWinCore.IsBottommost;
-            _isTopmost = _uniWinCore.IsTopmost;
+            if (_uniWinCore.IsActive)
+            {
+                _isBottommost = _uniWinCore.IsBottommost;
+                _isTopmost = _uniWinCore.IsTopmost;
+            }
+            else
+            {
+                // Not attached yet: keep the request so UpdateTargetWindow applies it on attach
+                _isBottommost = bottommost;
+                if (bottommost) _isTopmost = false;
+            }
         }
 
         /// <summary>
