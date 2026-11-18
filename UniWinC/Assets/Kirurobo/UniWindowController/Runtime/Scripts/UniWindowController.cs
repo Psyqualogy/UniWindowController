@@ -416,9 +416,10 @@ namespace Kirurobo
 
             // フルスクリーン強制解除。エディタでは何もしない
 #if !UNITY_EDITOR
-            if (forceWindowed && Screen.fullScreen)
+            // fullScreen is false for MaximizedWindow, so compare the mode itself
+            if (forceWindowed && Screen.fullScreenMode != FullScreenMode.Windowed)
             {
-                Screen.fullScreen = false;
+                Screen.fullScreenMode = FullScreenMode.Windowed;
             }
 #endif
 

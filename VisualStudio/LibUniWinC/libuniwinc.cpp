@@ -34,6 +34,8 @@ static INT pMonitorIndices_[UNIWINC_MAX_MONITORCOUNT];	// このライブラリ�
 static HMONITOR hMonitors_[UNIWINC_MAX_MONITORCOUNT];	// Monitor handles
 static WNDPROC lpMyWndProc_ = NULL;
 static WNDPROC lpOriginalWndProc_ = NULL;
+static BOOL bRestylePending_ = FALSE;					// A posted WM_UNIWINC_RESTYLE has not run yet
+static const UINT WM_UNIWINC_RESTYLE = WM_APP + 0x5557;	// Re-strip the frame after someone else restyled the window
 //static HHOOK hHook_ = NULL;
 static WindowStyleChangedCallback hWindowStyleChangedHandler_ = nullptr;
 static MonitorChangedCallback hMonitorChangedHandler_ = nullptr;
@@ -1496,11 +1498,25 @@ LRESULT CALLBACK customWindowProcedure(HWND hWnd, UINT uMsg, WPARAM wParam, LPAR
 		break;
 
 	case WM_STYLECHANGED:	// スタイルの変化を検出
+		// Someone else (e.g. the player applying a saved MaximizedWindow mode after attach) put the
+		// frame back while borderless is on: strip it again once the current change has finished.
+		if (wParam == GWL_STYLE && bIsBorderless_ && !bRestylePending_
+			&& (((STYLESTRUCT*)lParam)->styleNew & (WS_CAPTION | WS_THICKFRAME))) {
+			bRestylePending_ = PostMessage(hWnd, WM_UNIWINC_RESTYLE, 0, 0);
+		}
 		// Run callback
 		if (hWindowStyleChangedHandler_ != nullptr) {
 			hWindowStyleChangedHandler_((INT32)WindowStateEventType::StyleChanged);
 		}
 		break;
+
+	case WM_UNIWINC_RESTYLE:
+		bRestylePending_ = FALSE;
+		if (hWnd == hTargetWnd_ && bIsBorderless_) {
+			SetBorderless(TRUE);
+			if (bIsTransparent_) SetTransparent(TRUE);
+		}
+		return 0;
 
 	case WM_SIZE:		// 最大化、最小化による変化を検出
 		switch (wParam)
